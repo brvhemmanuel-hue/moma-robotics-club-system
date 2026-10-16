@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS members (
   class_name TEXT DEFAULT '',
   student_id TEXT DEFAULT '',
   section TEXT NOT NULL DEFAULT 'jhs',          -- 'jhs' or 'primary'
+  gender TEXT NOT NULL DEFAULT '',              -- 'male' or 'female'
+  department TEXT NOT NULL DEFAULT '',          -- 'jhs', 'lower_primary' or 'upper_primary'
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
