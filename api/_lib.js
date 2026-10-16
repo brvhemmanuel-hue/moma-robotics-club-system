@@ -41,6 +41,10 @@ const init = () => (ready ??= (async () => {
   // Upgrade path for databases created before sections existed.
   await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS section TEXT NOT NULL DEFAULT 'jhs'`;
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS section TEXT NOT NULL DEFAULT 'jhs'`;
+  // Gender and department support (safe to run on existing databases).
+  await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS gender TEXT NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT ''`;
+  await sql`UPDATE members SET department = 'jhs' WHERE department = '' AND section = 'jhs'`;
   await sql`CREATE TABLE IF NOT EXISTS admins (id SERIAL PRIMARY KEY, name TEXT NOT NULL, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, section TEXT NOT NULL DEFAULT 'jhs', created_at TIMESTAMPTZ DEFAULT now())`;
 })());
 
