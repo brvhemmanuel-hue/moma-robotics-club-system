@@ -66,7 +66,8 @@ body{background:#fff}aside,.noprint,.toast,h2,.sub,.bar{display:none!important}
 .ph{display:block;text-align:center;margin-bottom:14px}.ph img{width:84px}
 .ph h1{margin:6px 0 2px;font-size:20px;color:#1b2a6b}.ph h3{margin:2px 0;font-size:15px}.ph p{margin:3px 0;color:#444;font-size:12px}
 .card{border:0;padding:0}th{background:#1b2a6b;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-th,td{border:1px solid #cfd3e0}.pill{background:none;font-weight:700}tr{page-break-inside:avoid}}
+th,td{border:1px solid #cfd3e0}.pill{background:none;font-weight:700}tr{page-break-inside:avoid}
+.grid .card{border:1px solid #cfd3e0;padding:10px 14px}.card+.card{margin-top:14px}h3{break-after:avoid}thead{display:table-header-group}}
 </style>
 </head>
 <body>
@@ -93,6 +94,7 @@ th,td{border:1px solid #cfd3e0}.pill{background:none;font-weight:700}tr{page-bre
     <button class="nav" data-v="members">Members</button>
     <button class="nav" data-v="sessions">Sessions</button>
     <button class="nav" data-v="reports">Reports</button>
+    <button class="nav" data-v="membership">Membership Report</button>
     <button class="nav hide" data-v="admins" id="navAdmins">Admins</button>
     <div class="sp"></div>
     <button class="nav hide" id="install">Install app</button>
@@ -105,6 +107,8 @@ th,td{border:1px solid #cfd3e0}.pill{background:none;font-weight:700}tr{page-bre
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let editId=null,mscope='all';
+const DEPTS={jhs:'JHS',lower_primary:'Lower Primary',upper_primary:'Upper Primary'},GEN={male:'Male',female:'Female'};
 const SECS={jhs:'Junior High School (JHS)',primary:'Lower and Upper Primary'};
 const EYE=`<button type="button" class="eye" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/><line class="slash" x1="3" y1="3" x2="21" y2="21"/></svg></button>`;
 let user=JSON.parse(localStorage.getItem('moma_user')||'null'),token=user?localStorage.getItem('moma_token'):null,
@@ -175,11 +179,23 @@ async take(){
   draw();
 },
 async members(){
-  const ms=await api('members');
-  $('#view').innerHTML=`<h2>Members</h2><p class="sub">${esc(SECS[sec])}: ${ms.length} registered learners.</p>
-  <div class="card"><form class="row" id="f"><input id="n" placeholder="Full name" required><input id="c" placeholder="Class (e.g. JHS 2A)"><input id="i" placeholder="Student ID (optional)"><button class="btn gold">Add member</button></form>
-  <table><tr><th>Name</th><th>Class</th><th>ID</th><th></th></tr>${ms.map(m=>`<tr><td>${esc(m.name)}</td><td>${esc(m.class_name)}</td><td>${esc(m.student_id)}</td><td><button class="btn ghost sm" data-d="${m.id}">Remove</button></td></tr>`).join('')}</table></div>`;
-  $('#f').onsubmit=async e=>{e.preventDefault();try{await api('members','POST',{name:$('#n').value,class_name:$('#c').value,student_id:$('#i').value});go('members')}catch(x){toast(x.message)}};
+  editId=null;
+  const ms=await api('members'),prim=sec==='primary',gap=ms.filter(m=>!m.gender||!m.department).length;
+  $('#view').innerHTML=`<h2>Members</h2><p class="sub">${esc(SECS[sec])}: ${ms.length} registered learners.${gap?` ${gap} need gender or department filled in (use Edit).`:''}</p>
+  <div class="card"><form class="row" id="f"><input id="n" placeholder="Full name" required>
+  <select id="g" required><option value="">Gender</option><option value="male">Male</option><option value="female">Female</option></select>
+  ${prim?`<select id="dp" required><option value="">Department</option><option value="lower_primary">Lower Primary</option><option value="upper_primary">Upper Primary</option></select>`:''}
+  <input id="c" list="cl" placeholder="Class (e.g. Basic 7A)"><datalist id="cl">${(prim?[1,2,3,4,5,6]:[7,8,9]).map(n=>`<option value="Basic ${n}">`).join('')}</datalist>
+  <input id="i" placeholder="Student ID (optional)"><button class="btn gold" id="sb">Add member</button><button type="button" class="btn ghost hide" id="cx">Cancel</button></form>
+  <table><tr><th>Name</th><th>Gender</th><th>Department</th><th>Class</th><th>ID</th><th></th></tr>${ms.map(m=>`<tr><td>${esc(m.name)}</td><td>${GEN[m.gender]||'Not set'}</td><td>${DEPTS[m.department]||'Not set'}</td><td>${esc(m.class_name)}</td><td>${esc(m.student_id)}</td>
+  <td><button class="btn ghost sm" data-e="${m.id}">Edit</button> <button class="btn ghost sm" data-d="${m.id}">Remove</button></td></tr>`).join('')}</table></div>`;
+  const reset=()=>{editId=null;$('#f').reset();$('#sb').textContent='Add member';$('#cx').classList.add('hide')};
+  $('#cx').onclick=reset;
+  document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const m=ms.find(x=>x.id==b.dataset.e);editId=m.id;
+    $('#n').value=m.name;$('#g').value=m.gender;if(prim)$('#dp').value=m.department;$('#c').value=m.class_name;$('#i').value=m.student_id;
+    $('#sb').textContent='Save changes';$('#cx').classList.remove('hide');scrollTo({top:0,behavior:'smooth'})});
+  $('#f').onsubmit=async e=>{e.preventDefault();const body={name:$('#n').value,gender:$('#g').value,department:prim?$('#dp').value:'jhs',class_name:$('#c').value,student_id:$('#i').value};
+    try{if(editId){await api('members','PUT',{...body,id:editId});toast('Member updated')}else await api('members','POST',body);editId=null;go('members')}catch(x){toast(x.message)}};
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{if(confirm('Remove this member and their attendance records?')){await api('members?id='+b.dataset.d,'DELETE');go('members')}});
 },
 async sessions(){
@@ -205,6 +221,36 @@ async reports(){
     const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`robotics-attendance-${sec}.csv`;a.click()};
 },
+async membership(){
+  const canAll=user.section==='all';if(!canAll)mscope='sec';
+  const whole=canAll&&mscope==='all';
+  const ms=await api('members'+(whole?'?scope=all':''));
+  const cnt=a=>({b:a.filter(m=>m.gender==='male').length,g:a.filter(m=>m.gender==='female').length,t:a.length});
+  const tot=cnt(ms),label=whole?'Whole club (all departments)':SECS[sec];
+  const keys=whole?['jhs','lower_primary','upper_primary']:sec==='jhs'?['jhs']:['lower_primary','upper_primary'];
+  const rd=keys.map(k=>[DEPTS[k],cnt(ms.filter(m=>m.department===k))]);
+  const un=ms.filter(m=>!keys.includes(m.department));if(un.length)rd.push(['Not set',cnt(un)]);
+  const cm={};ms.forEach(m=>{const k=(m.class_name||'Not set')+'|'+m.department;(cm[k]??=[]).push(m)});
+  const rc=Object.entries(cm).map(([k,a])=>{const i=k.lastIndexOf('|');return [k.slice(0,i),DEPTS[k.slice(i+1)]||'Not set',cnt(a)]})
+    .sort((x,y)=>x[1].localeCompare(y[1])||x[0].localeCompare(y[0],undefined,{numeric:true}));
+  const list=[...ms].sort((x,y)=>(DEPTS[x.department]||'~').localeCompare(DEPTS[y.department]||'~')||(x.class_name||'').localeCompare(y.class_name||'',undefined,{numeric:true})||x.name.localeCompare(y.name));
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const c3=c=>`<td>${c.b}</td><td>${c.g}</td><td>${c.t}</td>`;
+  $('#view').innerHTML=`<div class="ph"><img src="/icon-192.png" alt=""><h1>MT. OLIVET METHODIST ACADEMY</h1><h3>Robotics Club Membership Report</h3><p>${esc(label)} | ${today}</p></div>
+  <h2>Membership Report</h2><p class="sub">${esc(label)}: learners by department, class and gender.${tot.b+tot.g<tot.t?` ${tot.t-tot.b-tot.g} have no gender set.`:''}</p>
+  <div class="row noprint">${canAll?`<select id="ms" style="max-width:280px"><option value="all" ${whole?'selected':''}>Whole club (all departments)</option><option value="sec" ${whole?'':'selected'}>${esc(SECS[sec])} only</option></select>`:''}
+  <button class="btn gold" id="csv">Export CSV</button><button class="btn ghost" onclick="print()">Print or save PDF</button></div>
+  <div class="grid"><div class="card stat"><b>${tot.t}</b><span>Total members</span></div><div class="card stat"><b>${tot.b}</b><span>Boys</span></div><div class="card stat"><b>${tot.g}</b><span>Girls</span></div></div>
+  <div class="card"><h3 style="margin-top:0">By department</h3><table><tr><th>Department</th><th>Boys</th><th>Girls</th><th>Total</th></tr>
+  ${rd.map(([n,c])=>`<tr><td>${n}</td>${c3(c)}</tr>`).join('')}<tr><td><b>Total</b></td><td><b>${tot.b}</b></td><td><b>${tot.g}</b></td><td><b>${tot.t}</b></td></tr></table></div>
+  <div class="card" style="margin-top:14px"><h3 style="margin-top:0">By class</h3>${rc.length?`<table><tr><th>Class</th><th>Department</th><th>Boys</th><th>Girls</th><th>Total</th></tr>${rc.map(([c,d,n])=>`<tr><td>${esc(c)}</td><td>${d}</td>${c3(n)}</tr>`).join('')}</table>`:'<p class="sub">No members yet.</p>'}</div>
+  <div class="card" style="margin-top:14px"><h3 style="margin-top:0">Member list</h3><table><thead><tr><th>#</th><th>Name</th><th>Gender</th><th>Department</th><th>Class</th></tr></thead>
+  <tbody>${list.map((m,i)=>`<tr><td>${i+1}</td><td>${esc(m.name)}</td><td>${GEN[m.gender]||'Not set'}</td><td>${DEPTS[m.department]||'Not set'}</td><td>${esc(m.class_name)}</td></tr>`).join('')}</tbody></table></div>`;
+  if(canAll)$('#ms').onchange=e=>{mscope=e.target.value;go('membership')};
+  $('#csv').onclick=()=>{const rows=[['Name','Gender','Department','Class','Student ID'],...list.map(m=>[m.name,GEN[m.gender]||'',DEPTS[m.department]||'',m.class_name,m.student_id])];
+    const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='robotics-membership.csv';a.click()};
+},
 async admins(){
   const as=await api('admins');
   $('#view').innerHTML=`<h2>Admins</h2><p class="sub">Add supervisors for each group. They only see and manage their own learners.</p>
@@ -218,7 +264,7 @@ async admins(){
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{if(confirm('Remove this admin? Their learners and records stay.')){await api('admins?id='+b.dataset.d,'DELETE');go('admins')}});
 }};
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
-addEventListener('beforeprint',()=>{document.title=`MOMA Robotics Club Attendance Report - ${SECS[sec]}`});addEventListener('afterprint',()=>{document.title='MOMA Robotics Club Attendance'});
+addEventListener('beforeprint',()=>{document.title=cur==='membership'?'MOMA Robotics Club Membership Report':`MOMA Robotics Club Attendance Report - ${SECS[sec]}`});addEventListener('afterprint',()=>{document.title='MOMA Robotics Club Attendance'});
 let dip;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;$('#install').classList.remove('hide')});
 $('#install').onclick=async()=>{if(!dip)return;dip.prompt();await dip.userChoice;dip=null;$('#install').classList.add('hide')};
 addEventListener('appinstalled',()=>{$('#install').classList.add('hide');toast('App installed')});
