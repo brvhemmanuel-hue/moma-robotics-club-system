@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b2a6b">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Robotics Club">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>MOMA Robotics Club Attendance</title>
+<link rel="icon" type="image/png" href="/icon.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<style>
+:root{--navy:#1b2a6b;--navy2:#13204f;--gold:#f2c80f;--bg:#f3f5fb;--card:#fff;--text:#1d2340;--mute:#6b7394;--line:#e1e5f2;--ok:#1f9d63;--late:#e49b0f;--bad:#d64545}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1430;--card:#172049;--text:#eef0fa;--mute:#9aa3cc;--line:#26305f}}
+*{box-sizing:border-box}body{margin:0;padding-bottom:env(safe-area-inset-bottom);font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}
+.hide{display:none!important}
+.login{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,rgba(19,32,79,.9),rgba(27,42,107,.78)),url(/login-bg.jpg) center/cover no-repeat #13204f}
+.login .box{background:var(--card);padding:32px;border-radius:18px;width:100%;max-width:380px;text-align:center;box-shadow:0 20px 50px #0005;border-top:6px solid var(--gold)}
+.login img{width:220px;max-width:100%}.login h1{font-size:20px;margin:14px 0 4px}.login p{color:var(--mute);margin:0 0 18px;font-size:14px}
+input,select{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
+input:focus,select:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.btn{background:var(--navy);color:#fff;border:0;padding:11px 18px;border-radius:10px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--navy2)}.btn.gold{background:var(--gold);color:#1b2a6b}.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sm{padding:6px 11px;font-size:13px}.btn.full{width:100%;margin-top:12px}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+aside{background:var(--navy);color:#fff;padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+aside .brand{background:#fff;border-radius:12px;padding:10px;margin-bottom:12px;text-align:center}aside .brand img{width:100%;max-width:190px}
+aside .title{font-size:12px;letter-spacing:.08em;color:var(--gold);text-transform:uppercase;padding:0 8px 8px}
+.nav{background:transparent;border:0;color:#cfd5f5;text-align:left;padding:11px 12px;border-radius:10px;cursor:pointer;font-weight:500}
+.nav:hover{background:#ffffff14}.nav.on{background:var(--gold);color:#1b2a6b;font-weight:700}
+aside .sp{flex:1}
+main{padding:28px;padding-top:calc(28px + env(safe-area-inset-top));max-width:1100px;width:100%}
+h2{margin:0 0 4px;font-size:24px;color:var(--navy)}@media(prefers-color-scheme:dark){h2{color:#fff}}
+.sub{color:var(--mute);margin:0 0 22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stat b{display:block;font-size:30px;color:var(--navy)}@media(prefers-color-scheme:dark){.stat b{color:var(--gold)}}
+.stat span{color:var(--mute);font-size:13px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);font-size:14px}
+th{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.row>*{flex:1;min-width:140px}.row>.btn{flex:none}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--mute);padding:7px 13px;cursor:pointer;font-weight:600;font-size:13px}
+.seg button.p.on{background:var(--ok);color:#fff}.seg button.l.on{background:var(--late);color:#fff}.seg button.a.on{background:var(--bad);color:#fff}
+.bar{height:8px;background:var(--line);border-radius:8px;overflow:hidden;min-width:90px}.bar i{display:block;height:100%;background:var(--ok)}
+.pill{padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;background:var(--line)}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;border-left:4px solid var(--gold);box-shadow:0 8px 24px #0004}
+.menu{display:none}
+@media(max-width:820px){.app{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}aside .brand{display:none}aside .title,aside .sp{display:none}main{padding:16px}.card{overflow-x:auto}}
+.pw{position:relative;flex:1;min-width:140px}.pw input{padding-right:44px}
+.eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--mute);cursor:pointer;padding:6px;display:flex;border-radius:8px}
+.eye:hover,.eye.on{color:var(--navy)}.slash{display:none}.eye.on .slash{display:block}
+.who{font-size:13px;color:#cfd5f5;padding:0 8px 8px;line-height:1.4}.who b{color:#fff}
+#secSel{margin:0 0 8px;background:#ffffff1a;color:#fff;border-color:#ffffff33}#secSel option{color:#000}
+.ph{display:none}
+@media print{
+:root{--bg:#fff;--card:#fff;--text:#000;--mute:#444;--line:#cfd3e0;--navy:#1b2a6b}
+@page{size:A4;margin:0}
+body{background:#fff}aside,.noprint,.toast,h2,.sub,.bar{display:none!important}
+.app{display:block}main{padding:16mm;max-width:none}
+.ph{display:block;text-align:center;margin-bottom:14px}.ph img{width:84px}
+.ph h1{margin:6px 0 2px;font-size:20px;color:#1b2a6b}.ph h3{margin:2px 0;font-size:15px}.ph p{margin:3px 0;color:#444;font-size:12px}
+.card{border:0;padding:0}th{background:#1b2a6b;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+th,td{border:1px solid #cfd3e0}.pill{background:none;font-weight:700}tr{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<section class="login" id="login">
+  <form class="box" id="loginForm">
+    <img src="/logo.png" alt="Mt. Olivet Methodist Academy">
+    <h1>Robotics Club Attendance</h1>
+    <p>Supervisor sign in</p>
+    <input id="un" placeholder="Username" autocomplete="username" autocapitalize="none" required style="margin-bottom:10px">
+    <div class="pw"><input type="password" id="pw" placeholder="Password" autocomplete="current-password" required><button type="button" class="eye" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/><line class="slash" x1="3" y1="3" x2="21" y2="21"/></svg></button></div>
+    <button class="btn full" type="submit">Sign in</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</section>
+
+<div class="app hide" id="app">
+  <aside>
+    <div class="brand"><img src="/logo.png" alt="MOMA"></div>
+    <div class="title">Robotics Club</div>
+    <div class="who" id="who"></div>
+    <select id="secSel" class="hide"></select>
+    <button class="nav on" data-v="dash">Dashboard</button>
+    <button class="nav" data-v="take">Take Attendance</button>
+    <button class="nav" data-v="members">Members</button>
+    <button class="nav" data-v="sessions">Sessions</button>
+    <button class="nav" data-v="reports">Reports</button>
+    <button class="nav hide" data-v="admins" id="navAdmins">Admins</button>
+    <div class="sp"></div>
+    <button class="nav hide" id="install">Install app</button>
+    <button class="nav" id="out">Sign out</button>
+  </aside>
+  <main id="view"></main>
+</div>
+<div class="toast hide" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SECS={jhs:'Junior High School (JHS)',primary:'Lower and Upper Primary'};
+const EYE=`<button type="button" class="eye" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/><line class="slash" x1="3" y1="3" x2="21" y2="21"/></svg></button>`;
+let user=JSON.parse(localStorage.getItem('moma_user')||'null'),token=user?localStorage.getItem('moma_token'):null,
+cur='dash',pick=null,marks={},sec=localStorage.getItem('moma_sec')||'jhs';
+document.addEventListener('click',e=>{const b=e.target.closest('.eye');if(!b)return;const i=b.parentElement.querySelector('input'),on=i.type==='password';
+  i.type=on?'text':'password';b.classList.toggle('on',on);b.setAttribute('aria-label',on?'Hide password':'Show password');b.title=on?'Hide password':'Show password'});
+
+async function api(path,method='GET',body){
+  const r=await fetch('/api/'+path+(path.includes('?')?'&':'?')+'section='+sec,{method,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:body?JSON.stringify(body):undefined});
+  const d=await r.json().catch(()=>({}));
+  if(r.status===401&&path!=='login'){logout();throw new Error(d.error)}
+  if(!r.ok)throw new Error(d.error||'Request failed');
+  return d;
+}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('hide');setTimeout(()=>t.classList.add('hide'),2600)}
+function show(){const on=!!(token&&user);$('#login').classList.toggle('hide',on);$('#app').classList.toggle('hide',!on);if(!on)return;
+  const all=user.section==='all';if(!all)sec=user.section;
+  $('#who').innerHTML=`<b>${esc(user.name)}</b><br>${user.role==='super'?'Main admin':esc(SECS[user.section]||'Both sections')}`;
+  const sel=$('#secSel');sel.classList.toggle('hide',!all);
+  sel.innerHTML=Object.entries(SECS).map(([k,v])=>`<option value="${k}" ${k===sec?'selected':''}>${v}</option>`).join('');
+  $('#navAdmins').classList.toggle('hide',user.role!=='super');go(cur)}
+function logout(){token=null;user=null;localStorage.removeItem('moma_token');localStorage.removeItem('moma_user');show()}
+$('#out').onclick=logout;
+$('#secSel').onchange=e=>{sec=e.target.value;localStorage.setItem('moma_sec',sec);pick=null;go(cur)};
+$('#loginForm').onsubmit=async e=>{e.preventDefault();$('#loginErr').textContent='';
+  try{const d=await api('login','POST',{username:$('#un').value,password:$('#pw').value});token=d.token;user=d.user;
+    localStorage.setItem('moma_token',token);localStorage.setItem('moma_user',JSON.stringify(user));$('#pw').value='';show()}
+  catch(x){$('#loginErr').textContent=x.message}};
+document.querySelectorAll('.nav[data-v]').forEach(b=>b.onclick=()=>go(b.dataset.v));
+
+async function go(v){
+  cur=v;document.querySelectorAll('.nav[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  $('#view').innerHTML='<p class="sub">Loading...</p>';
+  try{await views[v]()}catch(x){$('#view').innerHTML=`<div class="card">${esc(x.message)}</div>`}
+}
+const pct=(m,t)=>t?Math.round((m.present+m.late)/t*100):0;
+
+const views={
+async dash(){
+  const [sm,ss]=await Promise.all([api('summary'),api('sessions')]);
+  const t=sm.total_sessions,n=sm.members.length;
+  const avg=n&&t?Math.round(sm.members.reduce((a,m)=>a+pct(m,t),0)/n):0;
+  $('#view').innerHTML=`<h2>Dashboard</h2><p class="sub">${esc(SECS[sec])}: overview of club attendance this term.</p>
+  <div class="grid"><div class="card stat"><b>${n}</b><span>Registered members</span></div>
+  <div class="card stat"><b>${t}</b><span>Meetings held</span></div>
+  <div class="card stat"><b>${avg}%</b><span>Average attendance</span></div></div>
+  <div class="card"><h3 style="margin-top:0">Recent meetings</h3>${ss.length?`<table><tr><th>Date</th><th>Topic</th><th>Present</th><th>Late</th><th>Absent</th></tr>
+  ${ss.slice(0,6).map(s=>`<tr><td>${s.date}</td><td>${esc(s.topic)||'-'}</td><td>${s.present}</td><td>${s.late}</td><td>${s.absent}</td></tr>`).join('')}</table>`:'<p class="sub">No meetings yet. Create one under Sessions.</p>'}</div>`;
+},
+async take(){
+  const [ss,ms]=await Promise.all([api('sessions'),api('members')]);
+  if(!ss.length||!ms.length){$('#view').innerHTML=`<h2>Take Attendance</h2><div class="card"><p class="sub">${!ms.length?'Add members first.':'Create a session first.'}</p></div>`;return}
+  if(!pick||!ss.find(s=>s.id==pick))pick=ss[0].id;
+  const rec=await api('attendance?session_id='+pick);marks={};rec.forEach(r=>marks[r.member_id]=r.status);
+  const draw=(q='')=>{$('#list').innerHTML=ms.filter(m=>m.name.toLowerCase().includes(q.toLowerCase())).map(m=>{const s=marks[m.id];
+    return `<tr><td><b>${esc(m.name)}</b><br><span class="sub" style="margin:0;font-size:12px">${esc(m.class_name)}</span></td>
+    <td style="text-align:right"><div class="seg">${[['p','present','Present'],['l','late','Late'],['a','absent','Absent']].map(([c,v,l])=>`<button class="${c} ${s===v?'on':''}" data-id="${m.id}" data-s="${v}">${l}</button>`).join('')}</div></td></tr>`}).join('');
+    document.querySelectorAll('#list .seg button').forEach(b=>b.onclick=()=>{marks[b.dataset.id]=b.dataset.s;draw($('#q').value)});
+    const c=Object.values(marks);$('#cnt').textContent=`${c.filter(x=>x==='present').length} present, ${c.filter(x=>x==='late').length} late, ${c.filter(x=>x==='absent').length} absent of ${ms.length}`};
+  $('#view').innerHTML=`<h2>Take Attendance</h2><p class="sub">${esc(SECS[sec])}: select a meeting and mark each member.</p>
+  <div class="card"><div class="row"><select id="sel">${ss.map(s=>`<option value="${s.id}" ${s.id==pick?'selected':''}>${s.date} ${esc(s.topic)}</option>`).join('')}</select>
+  <input id="q" placeholder="Search member"><button class="btn ghost" id="all">Mark all present</button><button class="btn gold" id="save">Save</button></div>
+  <p class="sub" id="cnt" style="margin:0 0 8px"></p><table id="list"></table></div>`;
+  $('#sel').onchange=e=>{pick=e.target.value;go('take')};$('#q').oninput=e=>draw(e.target.value);
+  $('#all').onclick=()=>{ms.forEach(m=>marks[m.id]='present');draw($('#q').value)};
+  $('#save').onclick=async()=>{const records=ms.map(m=>({member_id:m.id,status:marks[m.id]||'absent'}));
+    try{await api('attendance','POST',{session_id:pick,records});records.forEach(r=>marks[r.member_id]=r.status);draw($('#q').value);toast('Attendance saved')}catch(x){toast(x.message)}};
+  draw();
+},
+async members(){
+  const ms=await api('members');
+  $('#view').innerHTML=`<h2>Members</h2><p class="sub">${esc(SECS[sec])}: ${ms.length} registered learners.</p>
+  <div class="card"><form class="row" id="f"><input id="n" placeholder="Full name" required><input id="c" placeholder="Class (e.g. JHS 2A)"><input id="i" placeholder="Student ID (optional)"><button class="btn gold">Add member</button></form>
+  <table><tr><th>Name</th><th>Class</th><th>ID</th><th></th></tr>${ms.map(m=>`<tr><td>${esc(m.name)}</td><td>${esc(m.class_name)}</td><td>${esc(m.student_id)}</td><td><button class="btn ghost sm" data-d="${m.id}">Remove</button></td></tr>`).join('')}</table></div>`;
+  $('#f').onsubmit=async e=>{e.preventDefault();try{await api('members','POST',{name:$('#n').value,class_name:$('#c').value,student_id:$('#i').value});go('members')}catch(x){toast(x.message)}};
+  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{if(confirm('Remove this member and their attendance records?')){await api('members?id='+b.dataset.d,'DELETE');go('members')}});
+},
+async sessions(){
+  const ss=await api('sessions');
+  $('#view').innerHTML=`<h2>Sessions</h2><p class="sub">${esc(SECS[sec])}: create a record for each club meeting.</p>
+  <div class="card"><form class="row" id="f"><input type="date" id="d" required value="${new Date().toISOString().slice(0,10)}"><input id="t" placeholder="Topic or activity"><button class="btn gold">Create session</button></form>
+  <table><tr><th>Date</th><th>Topic</th><th>Present</th><th>Late</th><th>Absent</th><th></th></tr>${ss.map(s=>`<tr><td>${s.date}</td><td>${esc(s.topic)||'-'}</td><td>${s.present}</td><td>${s.late}</td><td>${s.absent}</td>
+  <td><button class="btn sm" data-t="${s.id}">Take</button> <button class="btn ghost sm" data-d="${s.id}">Delete</button></td></tr>`).join('')}</table></div>`;
+  $('#f').onsubmit=async e=>{e.preventDefault();try{const r=await api('sessions','POST',{date:$('#d').value,topic:$('#t').value});pick=r.id;go('take')}catch(x){toast(x.message)}};
+  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{pick=b.dataset.t;go('take')});
+  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{if(confirm('Delete this session and its attendance?')){await api('sessions?id='+b.dataset.d,'DELETE');go('sessions')}});
+},
+async reports(){
+  const sm=await api('summary'),t=sm.total_sessions,sn=SECS[sec];
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  $('#view').innerHTML=`<div class="ph"><img src="/icon-192.png" alt=""><h1>MT. OLIVET METHODIST ACADEMY</h1><h3>Robotics Club Attendance Report</h3>
+  <p>${esc(sn)} | ${t} meeting${t==1?'':'s'} held | ${today}</p></div>
+  <h2>Reports</h2><p class="sub">${esc(sn)}: attendance per member across ${t} meeting${t==1?'':'s'}. Late counts as attended.</p>
+  <div class="card"><div class="row noprint"><button class="btn gold" id="csv">Export CSV</button><button class="btn ghost" onclick="print()">Print or save PDF</button></div>
+  <table><tr><th>#</th><th>Name</th><th>Class</th><th>Present</th><th>Late</th><th>Absent</th><th>Rate</th></tr>${sm.members.map((m,i)=>{const p=pct(m,t);return `<tr><td>${i+1}</td><td>${esc(m.name)}</td><td>${esc(m.class_name)}</td><td>${m.present}</td><td>${m.late}</td><td>${m.absent}</td>
+  <td><div style="display:flex;gap:8px;align-items:center"><div class="bar"><i style="width:${p}%"></i></div><span class="pill">${p}%</span></div></td></tr>`}).join('')}</table></div>`;
+  $('#csv').onclick=()=>{const rows=[['Name','Class','Present','Late','Absent','Rate %'],...sm.members.map(m=>[m.name,m.class_name,m.present,m.late,m.absent,pct(m,t)])];
+    const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`robotics-attendance-${sec}.csv`;a.click()};
+},
+async admins(){
+  const as=await api('admins');
+  $('#view').innerHTML=`<h2>Admins</h2><p class="sub">Add supervisors for each group. They only see and manage their own learners.</p>
+  <div class="card"><form class="row" id="f"><input id="an" placeholder="Full name" required><input id="au" placeholder="Username" autocapitalize="none" required>
+  <div class="pw"><input type="password" id="ap" placeholder="Password (min 6)" minlength="6" required>${EYE}</div>
+  <select id="as">${Object.entries(SECS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}<option value="all">Both groups</option></select><button class="btn gold">Add admin</button></form>
+  <table><tr><th>Name</th><th>Username</th><th>Manages</th><th></th></tr>${as.length?as.map(a=>`<tr><td>${esc(a.name)}</td><td>${esc(a.username)}</td><td>${esc(SECS[a.section]||'Both groups')}</td>
+  <td><button class="btn ghost sm" data-r="${a.id}">Reset password</button> <button class="btn ghost sm" data-d="${a.id}">Remove</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">No other admins yet.</td></tr>'}</table></div>`;
+  $('#f').onsubmit=async e=>{e.preventDefault();try{await api('admins','POST',{name:$('#an').value,username:$('#au').value,password:$('#ap').value,section:$('#as').value});toast('Admin added');go('admins')}catch(x){toast(x.message)}};
+  document.querySelectorAll('[data-r]').forEach(b=>b.onclick=async()=>{const pw=prompt('New password (at least 6 characters)');if(!pw)return;try{await api('admins','PUT',{id:b.dataset.r,password:pw});toast('Password updated')}catch(x){toast(x.message)}});
+  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{if(confirm('Remove this admin? Their learners and records stay.')){await api('admins?id='+b.dataset.d,'DELETE');go('admins')}});
+}};
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+addEventListener('beforeprint',()=>{document.title=`MOMA Robotics Club Attendance Report - ${SECS[sec]}`});addEventListener('afterprint',()=>{document.title='MOMA Robotics Club Attendance'});
+let dip;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;$('#install').classList.remove('hide')});
+$('#install').onclick=async()=>{if(!dip)return;dip.prompt();await dip.userChoice;dip=null;$('#install').classList.add('hide')};
+addEventListener('appinstalled',()=>{$('#install').classList.add('hide');toast('App installed')});
+show();
+</script>
+</body>
+</html>
